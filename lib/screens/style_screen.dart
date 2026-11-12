@@ -1,6 +1,5 @@
 
 import 'package:flutter/material.dart';
-
 import '../services/clothing_service.dart';
 import '../widgets/product_card.dart';
 
@@ -12,306 +11,305 @@ class StyleScreen extends StatefulWidget {
 }
 
 class _StyleScreenState extends State<StyleScreen> {
-
   final ClothingService clothingService = ClothingService();
 
   late Future<List<Map<String, dynamic>>> productsFuture;
 
   String searchText = '';
 
-  // Pokémon que utilizaremos como inspiración visual
-  final List<Map<String, dynamic>> inspirations = [
-    {
-      'name': 'Pikachu',
-      'color': const Color(0xFFFFCB05),
-    },
-    {
-      'name': 'Charmander',
-      'color': Colors.orange,
-    },
-    {
-      'name': 'Squirtle',
-      'color': Colors.lightBlue,
-    },
-    {
-      'name': 'Bulbasaur',
-      'color': Colors.green,
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
-
     productsFuture = clothingService.getClothingProducts();
   }
 
-  // Recargar productos
+  // Volver a consultar los productos
   void loadProducts() {
     setState(() {
       productsFuture = clothingService.getClothingProducts();
     });
   }
 
-  // Mostrar detalles del producto
+  // Mostrar información del producto seleccionado
   void showProductDetails(
     Map<String, dynamic> product,
     String pokemonName,
   ) {
-
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-
       builder: (context) {
-
-        return Padding(
-          padding: const EdgeInsets.all(20),
-
-          child: SingleChildScrollView(
+        return AlertDialog(
+          title: Text(product['title'] ?? 'Producto Pokémon'),
+          content: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-
-                Center(
-                  child: Container(
-                    width: 45,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Center(
-                  child: Image.network(
+                if ((product['thumbnail'] ?? '').toString().isNotEmpty)
+                  Image.network(
                     product['thumbnail'],
-                    height: 190,
+                    height: 150,
                     fit: BoxFit.contain,
-
                     errorBuilder: (context, error, stackTrace) {
                       return const Icon(
                         Icons.checkroom,
-                        size: 100,
+                        size: 80,
+                        color: Colors.grey,
                       );
                     },
                   ),
-                ),
-
                 const SizedBox(height: 15),
 
                 Text(
-                  product['title'] ?? 'Producto',
+                  'Relacionado con: $pokemonName',
                   style: const TextStyle(
-                    fontSize: 22,
                     fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                Text(
-                  'US\$ ${product['price']}',
-                  style: const TextStyle(
-                    fontSize: 20,
                     color: Color(0xFF3564A8),
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
 
                 const SizedBox(height: 10),
 
                 Text(
-                  product['description'] ?? '',
-                  style: const TextStyle(fontSize: 15),
+                  product['description']?.toString().isNotEmpty == true
+                      ? product['description']
+                      : 'Este producto no tiene descripción disponible.',
                 ),
 
                 const SizedBox(height: 15),
 
                 Text(
-                  'Inspiración: $pokemonName',
+                  'Precio: US\$ ${product['price'] ?? '0'}',
                   style: const TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                Text(
-                  'Valoración: ${product['rating'] ?? 'Sin datos'} / 5',
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-
-                    child: const Text('Cerrar'),
+                    color: Color(0xFF3564A8),
                   ),
                 ),
               ],
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cerrar'),
+            ),
+          ],
         );
       },
     );
   }
 
+  // Identificar el Pokémon relacionado con el producto
+  Map<String, dynamic> identifyPokemon(
+    Map<String, dynamic> product,
+  ) {
+    final title = (product['title'] ?? '').toString().toLowerCase();
+    final description =
+        (product['description'] ?? '').toString().toLowerCase();
+
+    final productText = '$title $description';
+
+    if (productText.contains('pikachu')) {
+      return {
+        'name': 'Pikachu',
+        'color': const Color(0xFFFFCB05),
+      };
+    } else if (productText.contains('charmander') ||
+        productText.contains('charizard')) {
+      return {
+        'name': 'Charmander / Charizard',
+        'color': Colors.orange,
+      };
+    } else if (productText.contains('squirtle')) {
+      return {
+        'name': 'Squirtle',
+        'color': Colors.lightBlue,
+      };
+    } else if (productText.contains('bulbasaur')) {
+      return {
+        'name': 'Bulbasaur',
+        'color': Colors.green,
+      };
+    } else if (productText.contains('eevee')) {
+      return {
+        'name': 'Eevee',
+        'color': Colors.brown,
+      };
+    }
+
+    return {
+      'name': 'Pokémon',
+      'color': Colors.blue,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'PokéStyle',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color(0xFFFFCB05),
+        foregroundColor: Colors.black,
+        actions: [
+          IconButton(
+            onPressed: loadProducts,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualizar productos',
+          ),
+        ],
+      ),
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-
+      body: Column(
         children: [
-
-          // PRESENTACIÓN
-          const Text(
-            '¡Encuentra tu estilo Pokémon!',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 6),
-
-          const Text(
-            'Descubre prendas inspiradas en tus Pokémon favoritos.',
-          ),
-
-          const SizedBox(height: 15),
-
-          // BUSCADOR
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Buscar prendas...',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'Descubre productos inspirados en el mundo Pokémon.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
               ),
             ),
+          ),
 
-            onChanged: (value) {
-              setState(() {
-                searchText = value.toLowerCase().trim();
-              });
-            },
+          // Buscador de productos
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Buscar productos Pokémon...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  searchText = value.toLowerCase();
+                });
+              },
+            ),
           ),
 
           const SizedBox(height: 15),
 
-          // CATÁLOGO
+          // Consulta de productos
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: productsFuture,
-
               builder: (context, snapshot) {
-
-                // CARGANDO
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting) {
-
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(),
                   );
                 }
 
-                // ERROR
                 if (snapshot.hasError) {
-
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-
-                        const Icon(
-                          Icons.error_outline,
-                          size: 55,
-                          color: Colors.red,
-                        ),
-
-                        const Text(
-                          'No se pudieron cargar los productos',
-                        ),
-
-                        ElevatedButton(
-                          onPressed: loadProducts,
-                          child: const Text('Intentar nuevamente'),
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 55,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'No se pudieron cargar los productos.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '${snapshot.error}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          ElevatedButton(
+                            onPressed: loadProducts,
+                            child: const Text('Intentar nuevamente'),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
 
                 final products = snapshot.data ?? [];
 
-                // BUSCAR PRODUCTOS
+                // Filtrar productos según el buscador
                 final filteredProducts = products.where((product) {
+                  final title =
+                      (product['title'] ?? '').toString().toLowerCase();
 
-                  final name = product['title']
-                      .toString()
-                      .toLowerCase();
+                  final description =
+                      (product['description'] ?? '').toString().toLowerCase();
 
-                  return name.contains(searchText);
-
+                  return title.contains(searchText) ||
+                      description.contains(searchText);
                 }).toList();
 
                 if (filteredProducts.isEmpty) {
                   return const Center(
-                    child: Text('No se encontraron productos'),
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'No se encontraron productos.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 }
 
-                // MOSTRAR CATÁLOGO
                 return GridView.builder(
-
-                  itemCount: filteredProducts.length,
-
+                  padding: const EdgeInsets.all(12),
                   gridDelegate:
                       const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
+                    childAspectRatio: 0.62,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 0.62,
                   ),
-
+                  itemCount: filteredProducts.length,
                   itemBuilder: (context, index) {
-
                     final product = filteredProducts[index];
 
-                    // Asignación visual de inspiración Pokémon
-                    final inspiration =
-                        inspirations[index % inspirations.length];
+                    final pokemon = identifyPokemon(product);
+
+                    final pokemonName = pokemon['name'] as String;
+                    final pokemonColor = pokemon['color'] as Color;
 
                     return ProductCard(
                       product: product,
-
-                      pokemonName: inspiration['name'] as String,
-
-                      pokemonColor: inspiration['color'] as Color,
-
+                      pokemonName: pokemonName,
+                      pokemonColor: pokemonColor,
                       onTap: () {
-                        showProductDetails(
-                          product,
-                          inspiration['name'] as String,
-                        );
+                        showProductDetails(product, pokemonName);
                       },
                     );
                   },

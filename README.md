@@ -1,4 +1,4 @@
-# 🎮 PokéMundo
+# PokéMundo
 
 ## Descripción del proyecto
 
