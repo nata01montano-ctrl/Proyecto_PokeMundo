@@ -145,180 +145,120 @@ class _StyleScreenState extends State<StyleScreen> {
     };
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'PokéStyle',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+  
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'Descubre productos inspirados en el mundo Pokémon.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+            ),
           ),
         ),
-        backgroundColor: const Color(0xFFFFCB05),
-        foregroundColor: Colors.black,
-        actions: [
-          IconButton(
-            onPressed: loadProducts,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Actualizar productos',
-          ),
-        ],
-      ),
 
-      body: Column(
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Descubre productos inspirados en el mundo Pokémon.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
+        // Buscador de productos
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Buscar productos Pokémon...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
               ),
             ),
+            onChanged: (value) {
+              setState(() {
+                searchText = value.toLowerCase();
+              });
+            },
           ),
+        ),
 
-          // Buscador de productos
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar productos Pokémon...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchText = value.toLowerCase();
-                });
-              },
-            ),
-          ),
+        const SizedBox(height: 15),
 
-          const SizedBox(height: 15),
-
-          // Consulta de productos
-          Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: productsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 55,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'No se pudieron cargar los productos.',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            '${snapshot.error}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 15),
-                          ElevatedButton(
-                            onPressed: loadProducts,
-                            child: const Text('Intentar nuevamente'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                final products = snapshot.data ?? [];
-
-                // Filtrar productos según el buscador
-                final filteredProducts = products.where((product) {
-                  final title =
-                      (product['title'] ?? '').toString().toLowerCase();
-
-                  final description =
-                      (product['description'] ?? '').toString().toLowerCase();
-
-                  return title.contains(searchText) ||
-                      description.contains(searchText);
-                }).toList();
-
-                if (filteredProducts.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 60,
-                            color: Colors.grey,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'No se encontraron productos.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return GridView.builder(
-                  padding: const EdgeInsets.all(12),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.62,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: filteredProducts.length,
-                  itemBuilder: (context, index) {
-                    final product = filteredProducts[index];
-
-                    final pokemon = identifyPokemon(product);
-
-                    final pokemonName = pokemon['name'] as String;
-                    final pokemonColor = pokemon['color'] as Color;
-
-                    return ProductCard(
-                      product: product,
-                      pokemonName: pokemonName,
-                      pokemonColor: pokemonColor,
-                      onTap: () {
-                        showProductDetails(product, pokemonName);
-                      },
-                    );
-                  },
+        // Lista de productos
+        Expanded(
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: productsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
                 );
-              },
-            ),
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Error al cargar los productos'),
+                      ElevatedButton(
+                        onPressed: loadProducts,
+                        child: const Text('Intentar nuevamente'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final products = snapshot.data ?? [];
+
+              final filteredProducts = products.where((product) {
+                final title =
+                    (product['title'] ?? '').toString().toLowerCase();
+                final description =
+                    (product['description'] ?? '').toString().toLowerCase();
+
+                return title.contains(searchText) ||
+                    description.contains(searchText);
+              }).toList();
+
+              if (filteredProducts.isEmpty) {
+                return const Center(
+                  child: Text('No se encontraron productos.'),
+                );
+              }
+
+              return GridView.builder(
+                padding: const EdgeInsets.all(12),
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.62,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: filteredProducts.length,
+                itemBuilder: (context, index) {
+                  final product = filteredProducts[index];
+                  final pokemon = identifyPokemon(product);
+
+                  final pokemonName = pokemon['name'] as String;
+                  final pokemonColor = pokemon['color'] as Color;
+
+                  return ProductCard(
+                    product: product,
+                    pokemonName: pokemonName,
+                    pokemonColor: pokemonColor,
+                    onTap: () {
+                      showProductDetails(product, pokemonName);
+                    },
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );    
+ }
 }
